@@ -1,11 +1,9 @@
-// PingPongOS - PingPong Operating System
-
-// Este arquivo PODE/DEVE ser alterado.
-
 // Alocador básico de memória heap.
 
 // somente para a implementação trivial
 #include <stdlib.h>
+
+#include "lib/pplibc.h"
 
 // implementação trivial, a ser substituída
 void *mem_alloc(int size)
