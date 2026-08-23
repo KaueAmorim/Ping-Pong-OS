@@ -16,8 +16,16 @@ IDs livres no final do mapa.
 #ifndef __MAP__
 #define __MAP__
 
+// códigos de retorno das funções
+#ifndef ERROR
 #define ERROR -1
 #define NOERROR 0
+#endif
+
+// ponteiro nulo
+#ifndef NULL
+#define NULL ((void *)0)
+#endif
 
 // Struct opaco que representa um mapa de objetos.
 struct map_t;
