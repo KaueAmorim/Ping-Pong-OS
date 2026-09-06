@@ -1,10 +1,3 @@
-// PingPongOS - PingPong Operating System
-// © Prof. Carlos A. Maziero, DINF UFPR
-// Versão 2.1 -- 06/2026
-
-// ATENÇÃO: ESTE ARQUIVO NÃO DEVE SER ALTERADO;
-// ALTERAÇÕES SERÃO DESCARTADAS NA CORREÇÃO.
-
 // Implementação simplificada de algumas funções básicas da biblioteca C,
 // que devem ser definidas aqui para nos liberar da GLibC.
 

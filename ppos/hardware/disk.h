@@ -1,10 +1,3 @@
-// PingPongOS - PingPong Operating System
-// © Prof. Carlos A. Maziero, DINF UFPR
-// Versão 2.1 -- 06/2026
-
-// ATENÇÃO: ESTE ARQUIVO NÃO DEVE SER ALTERADO;
-// ALTERAÇÕES SERÃO DESCARTADAS NA CORREÇÃO.
-
 // Emulação do disco virtual, que simula um disco rígido.
 
 // Atenção: deve ser usado o flag de ligação -lrt, para ligar com a

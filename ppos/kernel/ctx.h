@@ -1,10 +1,3 @@
-// PingPongOS - PingPong Operating System
-// © Prof. Carlos A. Maziero, DINF UFPR
-// Versão 2.1 -- 07/2026
-
-// ATENÇÃO: ESTE ARQUIVO NÃO DEVE SER ALTERADO;
-// ALTERAÇÕES SERÃO DESCARTADAS NA CORREÇÃO.
-
 /*
 Rotinas de manipulação de contextos no userspace, inspiradas de
 https://github.com/kaniini/libucontext/blob/master/arch/x86_64

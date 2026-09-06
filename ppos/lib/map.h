@@ -1,10 +1,3 @@
-// PingPongOS - PingPong Operating System
-// Prof. Carlos A. Maziero, DINF UFPR
-// Versão 2.1 -- 07/2026
-
-// ATENÇÃO: ESTE ARQUIVO NÃO DEVE SER ALTERADO;
-// ALTERAÇÕES SERÃO DESCARTADAS NA CORREÇÃO.
-
 /*
 TAD mapa de objetos, que registra objetos de tipo "void *". Um mapa de tamanho
 SIZE registra cada objeto sob um identificador único (ID), que varia entre 0
