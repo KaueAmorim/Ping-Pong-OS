@@ -4,6 +4,7 @@
 #define __PPOS_TCB__
 
 #include "ctx.h"
+#include "lib/queue.h"
 
 // estados possíveis de uma tarefa
 enum STATUS_T{
@@ -22,6 +23,7 @@ struct task_t
     struct ctx_t context;   // contexto da CPU (embutido)
     int status;             // estado atual da tarefa
     struct task_t *parent;  // tarefa que criou esta tarefa
+    struct queue_t *queue;  // fila onde a tarefa está (NULL se pronta)
 };
 
 #endif
