@@ -6,10 +6,13 @@
 #include "ctx.h"
 
 // estados possíveis de uma tarefa
-#define TASK_READY      0
-#define TASK_RUNNING    1
-#define TASK_SUSPENDED  2
-#define TASK_TERMINATED 3
+enum STATUS_T{
+    NEW,
+    READY,
+    RUNNING,
+    SUSPENDED,
+    TERMINATED
+};
 
 // Task Control Block (TCB), infos sobre uma tarefa
 struct task_t
@@ -18,10 +21,7 @@ struct task_t
     char *name;             // nome da tarefa
     struct ctx_t context;   // contexto da CPU (embutido)
     int status;             // estado atual da tarefa
-
     struct task_t *parent;  // tarefa que criou esta tarefa
-    void *stack;            // pilha da tarefa (NULL na tarefa do núcleo)
-    unsigned long stack_size; // tamanho da pilha, em bytes
 };
 
 #endif
