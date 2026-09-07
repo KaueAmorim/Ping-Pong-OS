@@ -4,6 +4,7 @@
 #include "tcb.h"
 #include "memory.h"
 #include "dispatcher.h"
+#include "hardware/cpu.h"
 
 // tamanho padrão das pilhas de tarefas de usuário
 #define STACK_SIZE 32 * 1024
@@ -28,6 +29,8 @@ void task_init()
     task_kernel.status = RUNNING;
     task_kernel.parent = NULL;
     task_kernel.queue = NULL;
+    task_kernel.quantum = 0;
+    task_kernel.is_system = 1;   // núcleo/dispatcher: nunca preemptável
     // o núcleo está rodando; é a tarefa corrente até outra ser ativada
     current_task = &task_kernel;
 }
@@ -65,6 +68,8 @@ struct task_t *task_create(char *name, void (*entry)(void *), void *arg)
     task->status = READY;
     task->prio_static = 0;
     task->prio_dynamic = 0;
+    task->quantum = 0;
+    task->is_system = 0;     // tarefa de usuário (preemptável)
     task->parent = current_task;
 
     // insere na fila de prontas e contabiliza como tarefa de usuário
@@ -121,6 +126,9 @@ char *task_name(struct task_t *task)
 
 void task_yield()
 {
+    // evita preempção dentro do núcleo
+    current_task->is_system = 1;
+
     current_task->status = READY;
     queue_add(ready_queue, current_task);
     current_task->queue = ready_queue;
@@ -132,6 +140,9 @@ void task_yield()
 void task_exit(int exit_code)
 {
     (void)exit_code; // ignored for now
+
+    // evita preempção dentro do núcleo
+    current_task->is_system = 1;
 
     current_task->status = TERMINATED;
     user_tasks--;

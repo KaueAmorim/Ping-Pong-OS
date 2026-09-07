@@ -24,6 +24,8 @@ struct task_t
     int status;             // estado atual da tarefa
     int prio_static;        // prioridade estática (-20 a +20, estilo UNIX)
     int prio_dynamic;       // prioridade dinâmica (envelhecida)
+    int quantum;            // quantum restante (em ticks)
+    int is_system;          // 1: tarefa de sistema (não preemptável); 0: de usuário
     struct task_t *parent;  // tarefa que criou esta tarefa
     struct queue_t *queue;  // fila onde a tarefa está (NULL se pronta)
 };

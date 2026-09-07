@@ -5,6 +5,7 @@
 #include "task.h"
 #include "tcb.h"
 #include "scheduler.h"
+#include "time.h"
 
 // fila de tarefas prontas
 struct queue_t *ready_queue = NULL;
@@ -92,6 +93,11 @@ void task_run(struct task_t *task)
     queue_del(ready_queue, task);
     task->queue = NULL;
     task->status = RUNNING;
+    task->is_system = 0;      // tarefa de usuário: pode ser preemptada
+
+    // ao ganhar a CPU, o dispatcher ajusta seu quantum em ticks
+    task->quantum = QUANTUM;
+
     task_switch(task);
 }
 
