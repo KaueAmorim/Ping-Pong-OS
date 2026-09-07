@@ -22,6 +22,8 @@ struct task_t
     char *name;             // nome da tarefa
     struct ctx_t context;   // contexto da CPU (embutido)
     int status;             // estado atual da tarefa
+    int prio_static;        // prioridade estática (-20 a +20, estilo UNIX)
+    int prio_dynamic;       // prioridade dinâmica (envelhecida)
     struct task_t *parent;  // tarefa que criou esta tarefa
     struct queue_t *queue;  // fila onde a tarefa está (NULL se pronta)
 };

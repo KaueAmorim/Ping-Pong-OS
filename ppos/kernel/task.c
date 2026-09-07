@@ -63,6 +63,8 @@ struct task_t *task_create(char *name, void (*entry)(void *), void *arg)
     task->id = id++;
     task->name = name;
     task->status = READY;
+    task->prio_static = 0;
+    task->prio_dynamic = 0;
     task->parent = current_task;
 
     // insere na fila de prontas e contabiliza como tarefa de usuário
