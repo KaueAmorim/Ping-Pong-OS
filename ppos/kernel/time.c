@@ -45,6 +45,11 @@ void tick_handler(int irq)
     // conta o tempo decorrido desde a inicialização
     uptime++;
 
+    // contabiliza 1 ms de CPU para a tarefa que estava rodando no tick,
+    // pois a interrupção do temporizador a interrompeu
+    if (current_task != NULL)
+        current_task->cpu_time++;
+
     // se não há tarefa corrente ou ela é de sistema, não preempta
     if (current_task == NULL)
         return;

@@ -5,6 +5,8 @@
 #include "memory.h"
 #include "dispatcher.h"
 #include "hardware/cpu.h"
+#include "time.h"
+#include "lib/pplibc.h"
 
 // tamanho padrão das pilhas de tarefas de usuário
 #define STACK_SIZE 32 * 1024
@@ -31,6 +33,10 @@ void task_init()
     task_kernel.queue = NULL;
     task_kernel.quantum = 0;
     task_kernel.is_system = 1;   // núcleo/dispatcher: nunca preemptável
+    task_kernel.start_time = 0;  // núcleo existe desde a inicialização
+    task_kernel.cpu_time = 0;
+    task_kernel.activations = 0;
+    task_kernel.exit_code = 0;
     // o núcleo está rodando; é a tarefa corrente até outra ser ativada
     current_task = &task_kernel;
 }
@@ -71,6 +77,11 @@ struct task_t *task_create(char *name, void (*entry)(void *), void *arg)
     task->quantum = 0;
     task->is_system = 0;     // tarefa de usuário (preemptável)
     task->parent = current_task;
+    // contabilização: a vida da tarefa começa na criação
+    task->start_time = time();
+    task->cpu_time = 0;
+    task->activations = 0;
+    task->exit_code = 0;
 
     // insere na fila de prontas e contabiliza como tarefa de usuário
     queue_add(ready_queue, task);
@@ -139,14 +150,29 @@ void task_yield()
 
 void task_exit(int exit_code)
 {
-    (void)exit_code; // ignored for now
-
     // evita preempção dentro do núcleo
     current_task->is_system = 1;
+
+    // contabilização: registra o código de encerramento
+    current_task->exit_code = exit_code;
 
     current_task->status = TERMINATED;
     user_tasks--;
 
     // retorna ao dispatcher
     task_switch(&task_kernel);
+}
+
+// imprime a contabilização de uma tarefa encerrada:
+// tempo de vida, tempo de CPU e número de ativações.
+void task_report(struct task_t *task)
+{
+    if (task == NULL)
+        return;
+
+    unsigned int life = time() - task->start_time;
+
+    printk("PPOS: task %3d (%s), %5u ms run, %5u ms cpu, %5u acts, exit code %3d\n",
+           task->id, task->name, life, task->cpu_time,
+           task->activations, task->exit_code);
 }

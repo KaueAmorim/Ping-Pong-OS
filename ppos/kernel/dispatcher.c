@@ -52,7 +52,8 @@ void dispatcher()
                 // já foi reenfileirada por task_yield; nada a fazer
                 break;
             case TERMINATED:
-                // tarefa encerrou; nada a fazer aqui (task_exit já tratou)
+                // tarefa encerrou: imprime sua contabilização
+                task_report(next);
                 break;
             case SUSPENDED:
                 // tarefa se suspendeu; foi inserida em outra fila
@@ -62,6 +63,9 @@ void dispatcher()
             }
         }
     }
+
+    // todas as tarefas terminaram: imprime a contabilização do núcleo
+    task_report(&task_kernel);
 
     task_destroy(task_user);
 }
@@ -73,6 +77,9 @@ int task_switch(struct task_t *task)
 
     struct task_t *prev = current_task;
     current_task = task;
+
+    // contabilização: a tarefa que recebe a CPU foi ativada
+    task->activations++;
 
     // troca de contexto: salva o estado atual em prev e carrega o de task
     if (ctx_switch(&prev->context, &task->context) != 0)
