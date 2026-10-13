@@ -28,6 +28,7 @@ struct task_t
     int is_system;          // 1: tarefa de sistema (não preemptável); 0: de usuário
     struct task_t *parent;  // tarefa que criou esta tarefa
     struct queue_t *queue;  // fila onde a tarefa está (NULL se pronta)
+    struct task_t *waited;  // tarefa aguardada por esta (task_wait)
     unsigned int start_time;   // tick em que a tarefa foi criada
     unsigned int cpu_time;     // ms de processador acumulados pela tarefa
     unsigned int activations;  // nº de vezes que a tarefa recebeu a CPU

@@ -10,6 +10,9 @@
 // fila de tarefas prontas
 struct queue_t *ready_queue = NULL;
 
+// fila de tarefas esperando por outras (task_wait)
+struct queue_t *waiting_queue = NULL;
+
 // contador de tarefas de usuário ativas (criadas e não terminadas)
 int user_tasks = 0;
 
@@ -17,16 +20,40 @@ extern struct task_t *current_task;
 extern struct task_t task_kernel;
 
 void user_main(void *args);
+void task_report(struct task_t *task);
+
+// acorda todas as tarefas que aguardavam (task_wait) a tarefa indicada
+static void wake_waiters(struct task_t *task)
+{
+    struct task_t *t = (struct task_t *)queue_head(waiting_queue);
+    while (t != NULL)
+    {
+        if (t->waited == task)
+        {
+            // retira t da fila de espera e a põe na fila de prontas;
+            // se t estava sob o iterador, este avança para o próximo
+            task_awake(t);
+            t = (struct task_t *)queue_item(waiting_queue);
+        }
+        else
+        {
+            t = (struct task_t *)queue_next(waiting_queue);
+        }
+    }
+}
 
 void dispatcher_init()
 {
     ready_queue = queue_create();
+    waiting_queue = queue_create();
 }
 
 void dispatcher_term()
 {
     queue_destroy(ready_queue);
     ready_queue = NULL;
+    queue_destroy(waiting_queue);
+    waiting_queue = NULL;
 }
 
 void dispatcher()
@@ -52,7 +79,9 @@ void dispatcher()
                 // já foi reenfileirada por task_yield; nada a fazer
                 break;
             case TERMINATED:
-                // tarefa encerrou: imprime sua contabilização
+                // acorda as tarefas que a aguardavam
+                wake_waiters(next);
+                // imprime sua contabilização
                 task_report(next);
                 break;
             case SUSPENDED:

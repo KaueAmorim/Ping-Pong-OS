@@ -22,6 +22,7 @@ struct task_t task_kernel;
 struct task_t *current_task = NULL;
 
 extern struct queue_t *ready_queue;
+extern struct queue_t *waiting_queue;
 extern int user_tasks;
 
 void task_init()
@@ -33,6 +34,7 @@ void task_init()
     task_kernel.queue = NULL;
     task_kernel.quantum = 0;
     task_kernel.is_system = 1;   // núcleo/dispatcher: nunca preemptável
+    task_kernel.waited = NULL;
     task_kernel.start_time = 0;  // núcleo existe desde a inicialização
     task_kernel.cpu_time = 0;
     task_kernel.activations = 0;
@@ -77,6 +79,7 @@ struct task_t *task_create(char *name, void (*entry)(void *), void *arg)
     task->quantum = 0;
     task->is_system = 0;     // tarefa de usuário (preemptável)
     task->parent = current_task;
+    task->waited = NULL;
     // contabilização: a vida da tarefa começa na criação
     task->start_time = time();
     task->cpu_time = 0;
@@ -107,8 +110,6 @@ int task_destroy(struct task_t *task)
 
     mem_free(task->context.stack);
     mem_free(task);
-
-    user_tasks--;
 
     return NOERROR;
 }
@@ -146,6 +147,25 @@ void task_yield()
 
     // retorna ao dispatcher
     task_switch(&task_kernel);
+}
+
+int task_wait(struct task_t *task)
+{
+    if (task == NULL)
+        return ERROR;
+
+    // se a tarefa já encerrou, retorna imediatamente com seu exit code
+    if (task->status == TERMINATED)
+        return task->exit_code;
+
+    // evita preempção durante a seção crítica check+suspend
+    current_task->is_system = 1;
+
+    // registra quem se aguarda e se suspende na fila de espera
+    current_task->waited = task;
+    task_suspend(waiting_queue);
+
+    return task->exit_code;
 }
 
 void task_exit(int exit_code)
