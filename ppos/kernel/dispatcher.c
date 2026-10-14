@@ -6,6 +6,7 @@
 #include "tcb.h"
 #include "scheduler.h"
 #include "time.h"
+#include "hardware/cpu.h"
 
 // fila de tarefas prontas
 struct queue_t *ready_queue = NULL;
@@ -13,8 +14,8 @@ struct queue_t *ready_queue = NULL;
 // fila de tarefas esperando por outras (task_wait)
 struct queue_t *waiting_queue = NULL;
 
-// contador de tarefas de usuário ativas (criadas e não terminadas)
-int user_tasks = 0;
+// fila de tarefas adormecidas (task_sleep)
+struct queue_t *sleeping_queue = NULL;
 
 extern struct task_t *current_task;
 extern struct task_t task_kernel;
@@ -42,10 +43,31 @@ static void wake_waiters(struct task_t *task)
     }
 }
 
+// acorda todas as tarefas adormecidas cujo instante de despertar chegou
+static void awake_sleepers()
+{
+    struct task_t *t = (struct task_t *)queue_head(sleeping_queue);
+    while (t != NULL)
+    {
+        if (time() >= t->wake_time)
+        {
+            // retira t da fila de dormindo e a põe na fila de prontas;
+            // se t estava sob o iterador, este avança para o próximo
+            task_awake(t);
+            t = (struct task_t *)queue_item(sleeping_queue);
+        }
+        else
+        {
+            t = (struct task_t *)queue_next(sleeping_queue);
+        }
+    }
+}
+
 void dispatcher_init()
 {
     ready_queue = queue_create();
     waiting_queue = queue_create();
+    sleeping_queue = queue_create();
 }
 
 void dispatcher_term()
@@ -54,6 +76,8 @@ void dispatcher_term()
     ready_queue = NULL;
     queue_destroy(waiting_queue);
     waiting_queue = NULL;
+    queue_destroy(sleeping_queue);
+    sleeping_queue = NULL;
 }
 
 void dispatcher()
@@ -61,9 +85,14 @@ void dispatcher()
     // cria a tarefa inicial de usuário, que executará user_main()
     struct task_t *task_user = task_create("user_main", user_main, NULL);
 
-    // enquanto houver tarefas de usuário e tarefas na fila de prontas
-    while (user_tasks > 0 && queue_size(ready_queue) > 0)
+    // enquanto houver tarefas prontas, esperando ou adormecidas
+    while (queue_size(ready_queue) > 0 ||
+           queue_size(waiting_queue) > 0 ||
+           queue_size(sleeping_queue) > 0)
     {
+        // verifica periodicamente a fila de adormecidas (fora da ISR do tick)
+        awake_sleepers();
+
         // escolhe a próxima tarefa a executar (FCFS: cabeça da fila)
         struct task_t *next = scheduler(ready_queue);
 
@@ -90,6 +119,13 @@ void dispatcher()
             default:
                 break;
             }
+        }
+        else
+        {
+            // nada pronto, mas há tarefas esperando/dormindo:
+            // suspende a CPU até a próxima interrupção (o tick do
+            // temporizador avançará o relógio e acordará as dormindo)
+            hw_wfi();
         }
     }
 

@@ -23,7 +23,7 @@ struct task_t *current_task = NULL;
 
 extern struct queue_t *ready_queue;
 extern struct queue_t *waiting_queue;
-extern int user_tasks;
+extern struct queue_t *sleeping_queue;
 
 void task_init()
 {
@@ -35,6 +35,7 @@ void task_init()
     task_kernel.quantum = 0;
     task_kernel.is_system = 1;   // núcleo/dispatcher: nunca preemptável
     task_kernel.waited = NULL;
+    task_kernel.wake_time = 0;
     task_kernel.start_time = 0;  // núcleo existe desde a inicialização
     task_kernel.cpu_time = 0;
     task_kernel.activations = 0;
@@ -80,16 +81,16 @@ struct task_t *task_create(char *name, void (*entry)(void *), void *arg)
     task->is_system = 0;     // tarefa de usuário (preemptável)
     task->parent = current_task;
     task->waited = NULL;
+    task->wake_time = 0;
     // contabilização: a vida da tarefa começa na criação
     task->start_time = time();
     task->cpu_time = 0;
     task->activations = 0;
     task->exit_code = 0;
 
-    // insere na fila de prontas e contabiliza como tarefa de usuário
+    // insere na fila de prontas
     queue_add(ready_queue, task);
     task->queue = ready_queue;
-    user_tasks++;
 
     return task;
 }
@@ -168,6 +169,16 @@ int task_wait(struct task_t *task)
     return task->exit_code;
 }
 
+void task_sleep(int t)
+{
+    // evita preempção durante a seção crítica check+suspend
+    current_task->is_system = 1;
+
+    // calcula o instante de despertar e se suspende na fila de dormindo
+    current_task->wake_time = time() + t;
+    task_suspend(sleeping_queue);
+}
+
 void task_exit(int exit_code)
 {
     // evita preempção dentro do núcleo
@@ -177,7 +188,6 @@ void task_exit(int exit_code)
     current_task->exit_code = exit_code;
 
     current_task->status = TERMINATED;
-    user_tasks--;
 
     // retorna ao dispatcher
     task_switch(&task_kernel);
