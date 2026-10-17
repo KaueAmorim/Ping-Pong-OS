@@ -90,7 +90,7 @@ void dispatcher()
            queue_size(waiting_queue) > 0 ||
            queue_size(sleeping_queue) > 0)
     {
-        // verifica periodicamente a fila de adormecidas (fora da ISR do tick)
+        // verifica periodicamente a fila de adormecidas
         awake_sleepers();
 
         // escolhe a próxima tarefa a executar (FCFS: cabeça da fila)
