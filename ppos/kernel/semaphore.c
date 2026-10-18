@@ -12,7 +12,7 @@
 struct semaphore_t
 {
     int id;                 // UID do semáforo (posição no mapa)
-    int value;              // contador do semáforo (negativo: nº de aguardantes)
+    int count;              // contador do semáforo (negativo: nº de aguardantes)
     struct queue_t *queue;  // fila de tarefas aguardando o semáforo
     int lock;               // spinlock: protege o acesso ao semáforo
 };
@@ -66,6 +66,10 @@ int sem_create(int value)
     if (value < 0 || sem_map == NULL)
         return ERROR;
 
+    // evita preempção enquanto retiver o spinlock do mapa
+    int prev = current_task->is_system;
+    current_task->is_system = 1;
+
     struct semaphore_t *sem = mem_alloc(sizeof(struct semaphore_t));
     if (sem == NULL)
         return ERROR;
@@ -85,13 +89,15 @@ int sem_create(int value)
     {
         queue_destroy(sem->queue);
         mem_free(sem);
+        current_task->is_system = prev;
         return ERROR;
     }
 
     sem->id    = id;
-    sem->value = value;
+    sem->count = value;
     sem->lock  = 0;
 
+    current_task->is_system = prev;
     return id;
 }
 
@@ -158,9 +164,9 @@ int sem_down(int sem_id)
 
     // decrementa o contador e suspende a tarefa caso ele se torne negativo
     spin_lock(&sem->lock);
-    sem->value--;
+    sem->count--;
 
-    if (sem->value >= 0)
+    if (sem->count >= 0)
     {
         // semáforo livre: continua a execução sem se suspender
         spin_unlock(&sem->lock);
@@ -199,9 +205,9 @@ int sem_up(int sem_id)
 
     // incrementa o contador e, se havia tarefas aguardando, acorda a primeira da fila
     spin_lock(&sem->lock);
-    sem->value++;
+    sem->count++;
 
-    if (sem->value <= 0)
+    if (sem->count <= 0)
     {
         struct task_t *t = (struct task_t *)queue_head(sem->queue);
         if (t != NULL)
